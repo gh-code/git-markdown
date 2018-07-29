@@ -1,0 +1,18 @@
+#!/bin/bash
+DEPLOY_DIR="<deploy>"
+GIT_DIR="<remote>"
+MARKDOWN_STYLES="<markdown-styles>"
+BRANCH="master"
+
+while read oldrev newrev ref
+do
+    # only checking out the master (or whatever branch you would like to deploy)
+    if [[ $ref = refs/heads/$BRANCH ]];
+    then
+        echo "Ref $ref received. Deploying ${BRANCH} branch to production..."
+        git --work-tree=$DEPLOY_DIR --git-dir=$GIT_DIR checkout -f
+        $MARKDOWN_STYLES --layout github --input $DEPLOY_DIR --output $DEPLOY_DIR
+    else
+        echo "Ref $ref received. Doing nothing: only the ${BRANCH} branch may be deployed on this server."
+    fi
+done

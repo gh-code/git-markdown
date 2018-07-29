@@ -1,0 +1,109 @@
+#!/bin/bash
+
+DRYRUN=1
+REPO_DIR="$HOME/repo"
+INSTALL_DIR="$HOME/.usr/local"
+
+MARKDOWN_STYLES="https://github.com/mixu/markdown-styles.git"
+NODEJS_BUILD_URL="https://nodejs.org/dist/v8.11.3/node-v8.11.3-linux-x64.tar.xz"
+
+SCRIPT_DIR="$(cd "$(dirname "$0")"; pwd -P)"
+SHARE_DIR="${SCRIPT_DIR}/../share"
+TEMPLATE_DIR="${SHARE_DIR}/template"
+MARKDOWN_STYLES_DIR="${SHARE_DIR}/markdown-styles"
+
+clone_on_progress=0
+
+interrupt() {
+    exit 1
+}
+
+leave() {
+    if [ "${clone_on_progress}" -eq "1" ]; then
+        echo "rm -rf "
+    fi
+}
+
+trap interrupt INT
+trap leave EXIT
+
+pushd () {
+    command pushd "$@" > /dev/null
+}
+
+popd () {
+    command popd "$@" > /dev/null
+}
+
+usage() {
+    echo "$0 <project> <deploy_dir>"
+    echo
+}
+
+install_nodejs() {
+    if [ ! -d "${INSTALL_DIR}" ]; then
+        mkdir -p ${INSTALL_DIR}
+        wget -O node-linux-x64.tar.xz ${NODEJS_BUILD_URL}
+        tar xvf node-linux-x64.tar.xz -C ${INSTALL_DIR}
+    fi
+    PATH=$PATH:${INSTALL_DIR}
+    export PATH
+}
+
+install_markdown_styles() {
+    if [ ! -d ${MARKDOWN_STYLES_DIR} ]; then
+        git clone ${MARKDOWN_STYLES} ${MARKDOWN_STYLES_DIR}
+        pushd ${MARKDOWN_STYLES_DIR}
+        npm install
+        popd
+    fi
+}
+
+first() {
+    if [ ! -x "$(command -v git)" ]; then
+        echo "Error: \`git' is required"
+        exit 1
+    fi
+    if [ ! -x "$(command -v npm)" ]; then
+        install_nodejs
+    fi
+    install_markdown_styles
+}
+
+if [ "$#" -ne "2" ]; then
+    usage
+    exit 1
+fi
+
+first
+
+if [ ! -d ${REPO_DIR} ]; then
+    mkdir ${REPO_DIR}
+    if [ "$?" -ne "0" ]; then
+        echo "Error: \`${REPO_DIR}' cannot be created"
+        exit 1
+    fi
+fi
+
+project=$1
+project_deploy_dir=$2
+project_git_dir=${REPO_DIR}/${project}.git
+if [ -d ${project_git_dir} ]; then
+    echo "Error: \`${project}' exists"
+    exit 1
+fi
+if [ ! -d ${project_deploy_dir} ]; then
+    echo "Error: please make sure deploy directory exists"
+    exit 1
+fi
+
+mkdir ${project_git_dir}
+pushd ${project_git_dir}
+git init --bare
+cp ${TEMPLATE_DIR}/post-receive hooks/post-receive
+sed -i "s#<deploy>#${project_deploy_dir}#" hooks/post-receive
+sed -i "s#<remote>#${project_git_dir}#" hooks/post-receive
+sed -i "s#<markdown-styles>#${MARKDOWN_STYLES_DIR}/bin/generate-md#" hooks/post-receive
+chmod +x hooks/post-receive
+popd
+
