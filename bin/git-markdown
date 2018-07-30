@@ -64,7 +64,7 @@ first() {
         echo "Error: \`git' is required"
         exit 1
     fi
-    if [ ! -x "$(command -v npm)" ]; then
+    if [ ! -x "$(command -v node)" ]; then
         install_nodejs
     fi
     install_markdown_styles
@@ -97,10 +97,12 @@ if [ ! -d ${project_deploy_dir} ]; then
     exit 1
 fi
 
+node_path=$(dirname $(which node))
 mkdir ${project_git_dir}
 pushd ${project_git_dir}
 git init --bare
 cp ${TEMPLATE_DIR}/post-receive hooks/post-receive
+sed -i "s#<npm-path>#${node_path}#" hooks/post-receive
 sed -i "s#<deploy>#${project_deploy_dir}#" hooks/post-receive
 sed -i "s#<remote>#${project_git_dir}#" hooks/post-receive
 sed -i "s#<markdown-styles>#${MARKDOWN_STYLES_DIR}/bin/generate-md#" hooks/post-receive

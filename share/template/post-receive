@@ -1,4 +1,5 @@
 #!/bin/bash
+PATH="$PATH:<npm-path>"
 DEPLOY_DIR="<deploy>"
 GIT_DIR="<remote>"
 MARKDOWN_STYLES="<markdown-styles>"
