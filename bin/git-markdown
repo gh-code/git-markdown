@@ -44,10 +44,13 @@ install_nodejs() {
     if [ ! -d "${INSTALL_DIR}" ]; then
         mkdir -p ${INSTALL_DIR}
         wget -O node-linux-x64.tar.xz ${NODEJS_BUILD_URL}
-        tar xvf node-linux-x64.tar.xz -C ${INSTALL_DIR}
+        xz -d node-linux-x64.tar.xz
+        tar xvf node-linux-x64.tar -C ${INSTALL_DIR}
     fi
-    PATH=$PATH:${INSTALL_DIR}
+    node_path=$(echo ${INSTALL_DIR}/node-*)/bin
+    PATH=$PATH:${node_path}
     export PATH
+    echo ${node_path} > NODE_PATH
 }
 
 install_markdown_styles() {
@@ -58,6 +61,10 @@ install_markdown_styles() {
         popd
     fi
 }
+
+if [ -f ${SCRIPT_DIR}/NODE_PATH ]; then
+    PATH=$PATH:$(cat ${SCRIPT_DIR}/NODE_PATH)
+fi
 
 first() {
     if [ ! -x "$(command -v git)" ]; then
