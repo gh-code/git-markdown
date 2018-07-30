@@ -50,7 +50,7 @@ install_nodejs() {
     node_path=$(echo ${INSTALL_DIR}/node-*)/bin
     PATH=$PATH:${node_path}
     export PATH
-    echo ${node_path} > NODE_PATH
+    echo ${node_path} > ${SCRIPT_DIR}/NODE_PATH
 }
 
 install_markdown_styles() {
