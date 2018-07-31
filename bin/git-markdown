@@ -16,11 +16,7 @@ interrupt() {
     exit 1
 }
 
-leave() {
-}
-
 trap interrupt INT
-trap leave EXIT
 
 pushd () {
     command pushd "$@" > /dev/null
@@ -39,8 +35,8 @@ install_nodejs() {
     if [ ! -d "${INSTALL_DIR}" ]; then
         mkdir -p ${INSTALL_DIR}
     fi
-    ls ${INSTALL_DIR}/node-* 1> /dev/null 2>&1
     tar_path="/tmp/node-linux-x64.tar"
+    ls ${INSTALL_DIR}/node-* 1> /dev/null 2>&1
     if [ "$?" -ne "0" ]; then
         echo "Download NodeJS build .."
         wget -O ${tar_path}.xz ${NODEJS_BUILD_URL}
