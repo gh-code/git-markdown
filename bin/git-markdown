@@ -12,16 +12,11 @@ SHARE_DIR="${SCRIPT_DIR}/../share"
 TEMPLATE_DIR="${SHARE_DIR}/template"
 MARKDOWN_STYLES_DIR="${SHARE_DIR}/markdown-styles"
 
-clone_on_progress=0
-
 interrupt() {
     exit 1
 }
 
 leave() {
-    if [ "${clone_on_progress}" -eq "1" ]; then
-        echo "rm -rf "
-    fi
 }
 
 trap interrupt INT
@@ -43,25 +38,44 @@ usage() {
 install_nodejs() {
     if [ ! -d "${INSTALL_DIR}" ]; then
         mkdir -p ${INSTALL_DIR}
-        wget -O node-linux-x64.tar.xz ${NODEJS_BUILD_URL}
-        xz -d node-linux-x64.tar.xz
-        tar xvf node-linux-x64.tar -C ${INSTALL_DIR}
+    fi
+    ls ${INSTALL_DIR}/node-* 1> /dev/null 2>&1
+    tar_path="/tmp/node-linux-x64.tar"
+    if [ "$?" -ne "0" ]; then
+        echo "Download NodeJS build .."
+        wget -O ${tar_path}.xz ${NODEJS_BUILD_URL}
+        echo "Decompress NodeJS build .."
+        xz -d ${tar_path}.xz
+        tar xf ${tar_path} -C ${INSTALL_DIR}
     fi
     node_path=$(echo ${INSTALL_DIR}/node-*)/bin
     PATH=$PATH:${node_path}
     export PATH
-    echo ${node_path} > ${SCRIPT_DIR}/NODE_PATH
+    echo ${node_path} > ${SHARE_DIR}/NODE_PATH
 }
 
 install_markdown_styles() {
+    echo "Install markdown-styles .."
     git clone ${MARKDOWN_STYLES} ${MARKDOWN_STYLES_DIR}
     pushd ${MARKDOWN_STYLES_DIR}
     npm install
     popd
 }
 
-if [ -f ${SCRIPT_DIR}/NODE_PATH ]; then
-    PATH=$PATH:$(cat ${SCRIPT_DIR}/NODE_PATH)
+create_post_receive_hook() {
+    node_path=$1
+    project_git_dir=$2
+    project_deploy_dir=$3
+    cp ${TEMPLATE_DIR}/post-receive hooks/post-receive
+    sed -i "s#<npm-path>#${node_path}#" hooks/post-receive
+    sed -i "s#<remote>#${project_git_dir}#" hooks/post-receive
+    sed -i "s#<deploy>#${project_deploy_dir}#" hooks/post-receive
+    sed -i "s#<markdown-styles>#${MARKDOWN_STYLES_DIR}/bin/generate-md#" hooks/post-receive
+    chmod +x hooks/post-receive
+}
+
+if [ -f ${SHARE_DIR}/NODE_PATH ]; then
+    PATH=$PATH:$(cat ${SHARE_DIR}/NODE_PATH)
 fi
 
 first() {
@@ -108,11 +122,7 @@ node_path=$(dirname $(which node))
 mkdir ${project_git_dir}
 pushd ${project_git_dir}
 git init --bare
-cp ${TEMPLATE_DIR}/post-receive hooks/post-receive
-sed -i "s#<npm-path>#${node_path}#" hooks/post-receive
-sed -i "s#<deploy>#${project_deploy_dir}#" hooks/post-receive
-sed -i "s#<remote>#${project_git_dir}#" hooks/post-receive
-sed -i "s#<markdown-styles>#${MARKDOWN_STYLES_DIR}/bin/generate-md#" hooks/post-receive
-chmod +x hooks/post-receive
+create_post_receive_hook ${node_path} ${project_git_dir} ${project_deploy_dir}
 popd
 
+exit 0
