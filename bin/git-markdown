@@ -1,6 +1,6 @@
 #!/bin/bash
+# Author: Gary Huang <gh.nctu+code@gmail.com>
 
-DRYRUN=1
 REPO_DIR="$HOME/repo"
 INSTALL_DIR="$HOME/.usr/local"
 
@@ -54,12 +54,10 @@ install_nodejs() {
 }
 
 install_markdown_styles() {
-    if [ ! -d ${MARKDOWN_STYLES_DIR} ]; then
-        git clone ${MARKDOWN_STYLES} ${MARKDOWN_STYLES_DIR}
-        pushd ${MARKDOWN_STYLES_DIR}
-        npm install
-        popd
-    fi
+    git clone ${MARKDOWN_STYLES} ${MARKDOWN_STYLES_DIR}
+    pushd ${MARKDOWN_STYLES_DIR}
+    npm install
+    popd
 }
 
 if [ -f ${SCRIPT_DIR}/NODE_PATH ]; then
@@ -71,10 +69,12 @@ first() {
         echo "Error: \`git' is required"
         exit 1
     fi
-    if [ ! -x "$(command -v node)" ]; then
+    if [ ! -x "$(command -v node)" ] || [ ! -x "$(command -v npm)" ]; then
         install_nodejs
     fi
-    install_markdown_styles
+    if [ ! -d ${MARKDOWN_STYLES_DIR} ]; then
+        install_markdown_styles
+    fi
 }
 
 if [ "$#" -ne "2" ]; then

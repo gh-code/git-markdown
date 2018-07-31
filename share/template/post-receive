@@ -2,8 +2,15 @@
 PATH="$PATH:<npm-path>"
 DEPLOY_DIR="<deploy>"
 GIT_DIR="<remote>"
+TMP_DIR="$GIT_DIR/tmp"
 MARKDOWN_STYLES="<markdown-styles>"
 BRANCH="master"
+
+create_rebuild() {
+    echo "PATH=$PATH" > $2
+    echo "$1" >> $2
+    chmod +x $2
+}
 
 while read oldrev newrev ref
 do
@@ -11,8 +18,13 @@ do
     if [[ $ref = refs/heads/$BRANCH ]];
     then
         echo "Ref $ref received. Deploying ${BRANCH} branch to production..."
-        git --work-tree=$DEPLOY_DIR --git-dir=$GIT_DIR checkout -f
-        $MARKDOWN_STYLES --layout github --input $DEPLOY_DIR --output $DEPLOY_DIR
+        if [ ! -d $TMP_DIR ]; then
+            mkdir $TMP_DIR
+        fi
+        git --work-tree=$TMP_DIR --git-dir=$GIT_DIR checkout -f
+        markdown_styles="$MARKDOWN_STYLES --layout github --input $TMP_DIR --output $DEPLOY_DIR"
+        create_rebuild "$markdown_styles" $GIT_DIR/rebuild.sh
+        $markdown_styles
     else
         echo "Ref $ref received. Doing nothing: only the ${BRANCH} branch may be deployed on this server."
     fi
