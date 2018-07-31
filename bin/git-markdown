@@ -41,6 +41,7 @@ install_nodejs() {
         echo "Download NodeJS build .."
         wget -O ${tar_path}.xz ${NODEJS_BUILD_URL}
         echo "Decompress NodeJS build .."
+        [ -f ${tar_path} ] && rm -f ${tar_path}
         xz -d ${tar_path}.xz
         tar xf ${tar_path} -C ${INSTALL_DIR}
     fi
