@@ -10,7 +10,7 @@ NODEJS_BUILD_URL="https://nodejs.org/dist/v8.11.3/node-v8.11.3-linux-x64.tar.xz"
 SCRIPT_DIR="$(cd "$(dirname "$0")"; pwd -P)"
 SHARE_DIR="${SCRIPT_DIR}/../share"
 TEMPLATE_DIR="${SHARE_DIR}/template"
-MARKDOWN_STYLES_DIR="${SHARE_DIR}/markdown-styles"
+MARKDOWN_STYLES_DIR="${INSTALL_DIR}/markdown-styles"
 
 interrupt() {
     exit 1
